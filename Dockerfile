@@ -1,6 +1,6 @@
 FROM rust:1.51 as builder
 
-RUN USER=root cargo new --bin em-fptp
+RUN USER=root cargo new --vcs none --bin em-fptp
 WORKDIR ./em-fptp
 COPY ./Cargo.toml ./Cargo.toml
 RUN cargo build --release
@@ -18,7 +18,7 @@ RUN apt-get update \
     && apt-get install -y ca-certificates tzdata \
     && rm -rf /var/lib/apt/lists/*
 
-EXPOSE 8081
+EXPOSE 8101
 
 ENV TZ=Etc/UTC \
     APP_USER=appuser

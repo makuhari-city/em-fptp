@@ -23,20 +23,19 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .wrap(cors)
             .app_data(modules.clone())
-            .service(hello)
-            .service(calculate_fptp)
+            .service(web::scope("/fptp").service(hello).service(calculate_fptp))
     })
     .bind("0.0.0.0:8101")?
     .run()
     .await
 }
 
-#[get("hello/")]
+#[get("/hello/")]
 async fn hello() -> impl Responder {
     "hello"
 }
 
-#[post("rpc/")]
+#[post("/rpc/")]
 async fn calculate_fptp(info: web::Json<TopicInfo>) -> impl Responder {
     let info = info.into_inner();
     let result = calculate(info);
