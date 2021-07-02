@@ -8,12 +8,17 @@ use vote::rpc::{JsonRPCRequest, JsonRPCResponse};
 
 type ModuleMap = Mutex<HashMap<String, String>>;
 
+const MODULE_NAME: &str = "/fptp";
+const PORT: &str = "8101";
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=trace,actix_redis=trace,vote=debug");
     env_logger::init();
 
     let modules: web::Data<ModuleMap> = web::Data::new(Mutex::new(HashMap::new()));
+
+    let addr = format!("0.0.0.0:{}", PORT);
 
     HttpServer::new(move || {
         // TODO: change this
@@ -23,9 +28,9 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .wrap(cors)
             .app_data(modules.clone())
-            .service(web::scope("/fptp").service(hello).service(calculate_fptp))
+            .service(web::scope(MODULE_NAME).service(hello).service(rpc))
     })
-    .bind("0.0.0.0:8101")?
+    .bind(&addr)?
     .run()
     .await
 }
@@ -36,7 +41,7 @@ async fn hello() -> impl Responder {
 }
 
 #[post("/rpc/")]
-async fn calculate_fptp(rpc: web::Json<JsonRPCRequest>) -> impl Responder {
+async fn rpc(rpc: web::Json<JsonRPCRequest>) -> impl Responder {
     let rpc = rpc.into_inner();
     let mut response = JsonRPCResponse::new(&rpc.id());
     let result = calculate(&rpc.vote_info()).await;
