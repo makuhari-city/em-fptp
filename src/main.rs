@@ -1,10 +1,10 @@
 use actix_cors::Cors;
-use actix_web::{client::Client, get, middleware, post, web, App, HttpServer, Responder};
+use actix_web::{get, middleware, post, web, App, HttpServer, Responder};
 use em_fptp::calculate;
 use serde_json::json;
 use std::collections::HashMap;
 use std::sync::Mutex;
-use vote::TopicInfo;
+use vote::rpc::{JsonRPCRequest, JsonRPCResponse};
 
 type ModuleMap = Mutex<HashMap<String, String>>;
 
@@ -36,8 +36,10 @@ async fn hello() -> impl Responder {
 }
 
 #[post("/rpc/")]
-async fn calculate_fptp(info: web::Json<TopicInfo>) -> impl Responder {
-    let info = info.into_inner();
-    let result = calculate(info);
-    web::Json(serde_json::json!({ "method":"fptp", "result":result }))
+async fn calculate_fptp(rpc: web::Json<JsonRPCRequest>) -> impl Responder {
+    let rpc = rpc.into_inner();
+    let mut response = JsonRPCResponse::new(&rpc.id());
+    let result = calculate(&rpc.vote_info()).await;
+    response.result(&json!(result));
+    web::Json(response)
 }
