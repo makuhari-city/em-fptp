@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use uuid::Uuid;
-use vote::VoteInfo;
+use vote::VoteData;
 
 type FPTPResult = Vec<(Uuid, u32)>;
 
-pub async fn calculate(info: &VoteInfo) -> FPTPResult {
+pub async fn calculate(info: &VoteData) -> FPTPResult {
     let mut result: HashMap<Uuid, u32> = HashMap::new();
     let stripped = info.only_policy_voting();
     for (_, vote) in stripped {
@@ -65,7 +65,7 @@ mod fptp_test {
 }
 "#;
 
-        let info: VoteInfo = serde_json::from_slice(json_data).unwrap();
+        let info: VoteData = serde_json::from_slice(json_data).unwrap();
         let result = calculate(&info).await;
         let winner: Uuid = Uuid::parse_str("0f18b644-3789-4194-9a98-0e08040395b7").unwrap();
         assert_eq!(result[0].0, winner);
@@ -119,7 +119,7 @@ mod fptp_test {
 }
 "#;
 
-        let info: VoteInfo = serde_json::from_slice(json_data).unwrap();
+        let info: VoteData = serde_json::from_slice(json_data).unwrap();
         let result = calculate(&info).await;
         let winner: Uuid = Uuid::parse_str("0f18b644-3789-4194-9a98-0e08040395b7").unwrap();
         assert_eq!(result[0].0, winner);
@@ -167,7 +167,7 @@ mod fptp_test {
 }
 "#;
 
-        let info: VoteInfo = serde_json::from_slice(json_data).unwrap();
+        let info: VoteData = serde_json::from_slice(json_data).unwrap();
         let result = calculate(&info).await;
         let winner: Uuid = Uuid::parse_str("0f18b644-3789-4194-9a98-0e08040395b7").unwrap();
         assert_eq!(result[0].0, winner);
@@ -193,7 +193,7 @@ mod fptp_test {
 }
 "#;
 
-        let info: VoteInfo = serde_json::from_slice(json_data).unwrap();
+        let info: VoteData = serde_json::from_slice(json_data).unwrap();
         let result = calculate(&info).await;
         assert!(result.is_empty());
     }
@@ -222,7 +222,7 @@ mod fptp_test {
 }
 "#;
 
-        let info: VoteInfo = serde_json::from_slice(json_data).unwrap();
+        let info: VoteData = serde_json::from_slice(json_data).unwrap();
         let result = calculate(&info).await;
         assert!(result.is_empty());
     }
