@@ -1,25 +1,56 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
 use vote::VoteData;
 
 type FPTPResult = Vec<(Uuid, u32)>;
 
-pub async fn calculate(info: &VoteData) -> FPTPResult {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FPTPIntermediate {
+    #[serde(rename = "voterID")]
+    voter_id: Uuid,
+    #[serde(rename = "voterPt")]
+    voter_pt: HashMap<Uuid, u32>,
+}
+
+impl FPTPIntermediate {
+    pub fn new(to: &Uuid, map: &HashMap<Uuid, u32>) -> Self {
+        Self {
+            voter_id: to.to_owned(),
+            voter_pt: map.to_owned(),
+        }
+    }
+}
+
+pub async fn calculate(info: &VoteData) -> (Vec<FPTPIntermediate>, FPTPResult) {
     let mut result: HashMap<Uuid, u32> = HashMap::new();
     let stripped = info.only_policy_voting();
-    for (_, vote) in stripped {
+
+    let mut intermediate = Vec::new();
+
+    for (src, vote) in stripped {
         let max = vote.iter().reduce(|a, b| if a.1 > b.1 { a } else { b });
+        let mut map = HashMap::new();
+
+        for (to, _) in vote.iter() {
+            map.insert(to.to_owned(), 0u32);
+        }
+
         if max.is_some() {
             let (to, _) = max.unwrap();
+            map.insert(to.to_owned(), 1u32);
             *result.entry(to.to_owned()).or_insert(0) += 1;
         }
+
+        let int = FPTPIntermediate::new(&src, &map);
+        intermediate.push(int);
     }
 
     let mut sorted = result.into_iter().collect::<Vec<(Uuid, u32)>>();
 
     sorted.sort_by(|(_, a), (_, b)| b.cmp(a));
 
-    sorted
+    (intermediate, sorted)
 }
 
 #[cfg(test)]
